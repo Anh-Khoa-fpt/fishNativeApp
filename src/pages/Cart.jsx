@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  Platform,
 } from 'react-native'
 import Layout from '../components/layout/Layout'
 import { useCart } from '../contexts/CartContext'
@@ -89,18 +90,53 @@ const Cart = () => {
 
             <TouchableOpacity
               style={styles.clearButton}
-              onPress={() => {
-                Alert.alert('Xác nhận', 'Bạn có chắc muốn xóa tất cả sản phẩm?', [
-                  { text: 'Hủy', style: 'cancel' },
-                  {
-                    text: 'Xóa',
-                    style: 'destructive',
-                    onPress: clearCart,
-                  },
-                ])
+              onPress={async () => {
+                console.log('🔴 Button clicked! Items count:', items.length)
+                console.log('clearCart function:', typeof clearCart)
+                
+                try {
+                  // Xác nhận trước khi xóa
+                  if (Platform.OS === 'web' && typeof window !== 'undefined' && window.confirm) {
+                    // Trên web, dùng window.confirm
+                    const confirmed = window.confirm(
+                      `Bạn có chắc muốn xóa tất cả ${items.length} sản phẩm trong giỏ hàng?`
+                    )
+                    
+                    if (confirmed) {
+                      console.log('✅ User confirmed, clearing cart...')
+                      console.log('Items before clear:', JSON.stringify(items))
+                      await clearCart()
+                      console.log('✅ Cart cleared!')
+                    } else {
+                      console.log('❌ User cancelled')
+                    }
+                  } else {
+                    // Trên mobile, dùng Alert
+                    Alert.alert(
+                      'Xác nhận xóa',
+                      `Bạn có chắc muốn xóa tất cả ${items.length} sản phẩm trong giỏ hàng?`,
+                      [
+                        { text: 'Hủy', style: 'cancel', onPress: () => console.log('❌ User cancelled') },
+                        {
+                          text: 'Xóa tất cả',
+                          style: 'destructive',
+                          onPress: async () => {
+                            console.log('✅ User confirmed, clearing cart...')
+                            console.log('Items before clear:', JSON.stringify(items))
+                            await clearCart()
+                            console.log('✅ Cart cleared!')
+                          },
+                        },
+                      ]
+                    )
+                  }
+                } catch (error) {
+                  console.error('❌ Error in clear button:', error)
+                  Alert.alert('Lỗi', 'Không thể xóa giỏ hàng. Vui lòng thử lại.')
+                }
               }}
             >
-              <Text style={styles.clearButtonText}>Xóa tất cả sản phẩm</Text>
+              <Text style={styles.clearButtonText}>🗑️ Xóa tất cả sản phẩm</Text>
             </TouchableOpacity>
 
             <View style={styles.summary}>
@@ -215,17 +251,20 @@ const styles = StyleSheet.create({
   clearButton: {
     marginHorizontal: 20,
     marginBottom: 20,
-    padding: 12,
-    backgroundColor: '#fff',
+    padding: 14,
+    backgroundColor: '#e74c3c',
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e74c3c',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   clearButtonText: {
-    color: '#e74c3c',
+    color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
   summary: {
     backgroundColor: '#fff',

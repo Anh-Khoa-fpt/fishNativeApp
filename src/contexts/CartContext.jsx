@@ -84,7 +84,13 @@ export const CartProvider = ({ children }) => {
   useEffect(() => {
     const saveCart = async () => {
       try {
-        await AsyncStorage.setItem('cart', JSON.stringify(state))
+        // Chỉ lưu nếu có items, nếu không thì xóa
+        if (state.items.length > 0) {
+          await AsyncStorage.setItem('cart', JSON.stringify(state))
+        } else {
+          // Nếu không có items, xóa cart khỏi AsyncStorage
+          await AsyncStorage.removeItem('cart')
+        }
       } catch (error) {
         console.error('Error saving cart:', error)
       }
@@ -127,7 +133,21 @@ export const CartProvider = ({ children }) => {
   const removeItemCompletely = (id) =>
     dispatch({ type: 'REMOVE_ALL_OF_ITEM', payload: { id } })
 
-  const clearCart = () => dispatch({ type: 'CLEAR' })
+  const clearCart = async () => {
+    try {
+      console.log('clearCart called, current items count:', state.items.length)
+      // Xóa cart khỏi AsyncStorage
+      await AsyncStorage.removeItem('cart')
+      console.log('AsyncStorage cart removed')
+      // Reset state về initialState
+      dispatch({ type: 'CLEAR' })
+      console.log('Cart cleared successfully, state reset to:', initialState)
+    } catch (error) {
+      console.error('Error clearing cart:', error)
+      // Vẫn dispatch CLEAR dù có lỗi với AsyncStorage
+      dispatch({ type: 'CLEAR' })
+    }
+  }
 
   const totalPrice = useMemo(
     () =>
